@@ -1,0 +1,86 @@
+[
+  {
+    "category": "CBC",
+    "title": "Inscripción al Ciclo Básico Común (CBC)",
+    "content": "La inscripción al CBC de la UBA se realiza de forma online en las fechas establecidas en el calendario académico anual (habitualmente entre febrero/marzo para el 1° cuatrimestre y junio/julio para el 2° cuatrimestre). Se requiere DNI argentino vigente o pasaporte para extranjeros, y la preinscripción en el portal del CBC. Los trámites de inscripción, cambio de carrera o de sede se gestionan a través de la plataforma oficial del CBC.",
+    "source_url": "https://www.cbc.uba.ar",
+    "url_label": "Portal Oficial del CBC UBA"
+  },
+  {
+    "category": "CBC",
+    "title": "Inscripción a Materias por UBA XXI",
+    "content": "UBA XXI es el programa de educación a distancia de la UBA que permite cursar materias del CBC de forma virtual. Las inscripciones a materias de UBA XXI se realizan a través del sistema SIU Guaraní de UBA XXI en las fechas que publica el programa en su web oficial.",
+    "source_url": "https://ubaxxi.uba.ar",
+    "url_label": "Portal Oficial UBA XXI"
+  },
+  {
+    "category": "Trámites",
+    "title": "Legalización de Título Secundario UBA",
+    "content": "La legalización del título secundario es obligatoria para el ingreso y expedición de títulos en la UBA. Se realiza 100% online a través del sistema de Trámites a Distancia UBA (TAD-UBA). Se debe ingresar a la plataforma TAD-UBA con clave AFIP, Mi Argentina o usuario TAD, adjuntar la imagen del título secundario (ambas caras) y abonar el arancel correspondiente.",
+    "source_url": "https://www.legalizaciones.uba.ar",
+    "url_label": "Sistema de Legalizaciones TAD-UBA"
+  },
+  {
+    "category": "Sistemas",
+    "title": "Acceso al SIU Guaraní de la UBA",
+    "content": "El SIU Guaraní es el sistema de gestión académica de la UBA para inscribirse a materias, exámenes finales, consultar actas de cursada y solicitar certificados. Cada facultad de la UBA posee su propio nodo o enlace de acceso al SIU Guaraní.",
+    "source_url": "https://www.uba.ar/estudiantes",
+    "url_label": "Accesos SIU Guaraní por Facultad"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Ciencias Exactas y Naturales (FCEN)",
+    "content": "Ubicada en Ciudad Universitaria. Ofrece carreras como Biología, Computación, Física, Química, Matemática, Datos y Geología. Para más información sobre inscripciones, trámites y departamentos docentes, visita la web oficial de Exactas.",
+    "source_url": "https://exactas.uba.ar",
+    "url_label": "Sitio Web de Exactas UBA"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Ingeniería (FIUBA)",
+    "content": "Ubicada en las sedes Paseo Colón y Las Heras. Ofrece carreras de Ingeniería Civil, Industrial, Informática, Mecánica, Electrónica, Química, entre otras. Las novedades sobre calendario académico y becas se publican en el portal oficial de FIUBA.",
+    "source_url": "https://www.fi.uba.ar",
+    "url_label": "Sitio Web de FIUBA"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Medicina (FMED)",
+    "content": "Ubicada en Plaza Houssay. Dicta Medicina, Nutrición, Enfermería, Fisiatría, Fonoaudiología y Kinesiología. La información sobre el pase del CBC a la facultad y libreta universitaria se consulta en su sitio web institucional.",
+    "source_url": "https://www.fmed.uba.ar",
+    "url_label": "Sitio Web de Medicina UBA"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Derecho",
+    "content": "Ubicada en Av. Figueroa Alcorta. Ofrece las carreras de Abogacía, Traductorado Público y Calígrafo Público. Los trámites de inscripción y fechas de inscripción a cursos se gestionan desde su web.",
+    "source_url": "http://www.derecho.uba.ar",
+    "url_label": "Sitio Web de Derecho UBA"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Ciencias Económicas (FCE)",
+    "content": "Ubicada en Av. Córdoba (Plaza Houssay). Ofrece Contador Público, Administración, Economía, Actuario y Sistemas de Información. Accede al sistema de inscripciones y fechas en su portal oficial.",
+    "source_url": "https://www.economicas.uba.ar",
+    "url_label": "Sitio Web de Económicas UBA"
+  },
+  {
+    "category": "Facultades",
+    "title": "Facultad de Arquitectura, Diseño y Urbanismo (FADU)",
+    "content": "Ubicada en Ciudad Universitaria (Pabellón 3). Dicta Arquitectura, Diseño Gráfico, Diseño Industrial, Diseño de Imagen y Sonido, Diseño de Indumentaria y Textil. Consulta el portal institucional para entregas y calendario.",
+    "source_url": "https://www.fadu.uba.ar",
+    "url_label": "Sitio Web de FADU UBA"
+  },
+  {
+    "category": "Trámites",
+    "title": "Simultaneidad y Pase de Carrera UBA",
+    "content": "Si deseas realizar dos carreras simultáneamente o cambiarte de carrera en la UBA, debes realizar el trámite de Simultaneidad o Pase de Carrera en las fechas dispuestas por la UBA y el CBC a través de TAD-UBA o la mesa de entradas de la facultad correspondiente.",
+    "source_url": "https://www.uba.ar/tramites",
+    "url_label": "Trámites y Certificados UBA"
+  },
+  {
+    "category": "Becas",
+    "title": "Becas de Estudio UBA (Sarmiento y Progresar)",
+    "content": "La UBA otorga las Becas Nicolás Avellaneda y Becas Sarmiento para apoyo económico a estudiantes de grado y CBC. Además, los estudiantes pueden inscribirse a las Becas Progresar del gobierno nacional. Toda la información y postulaciones se encuentran en la Secretaría de Relaciones Institucionales y Cultura UBA.",
+    "source_url": "https://www.uba.ar/becas",
+    "url_label": "Portal de Becas UBA"
+  }
+]
