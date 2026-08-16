@@ -9,6 +9,25 @@ create table if not exists documents (
   embedding vector(1536)
 );
 
+-- Habilitar RLS (Row Level Security) por seguridad
+alter table documents enable row level security;
+
+-- Permitir lectura y escritura pública para la ingesta y consultas
+create policy "Permitir lectura publica" 
+on documents for select 
+to anon, authenticated, service_role 
+using (true);
+
+create policy "Permitir insercion publica" 
+on documents for insert 
+to anon, authenticated, service_role 
+with check (true);
+
+create policy "Permitir actualizacion publica" 
+on documents for update 
+to anon, authenticated, service_role 
+using (true);
+
 -- 3. Crear índice IVFFlat o HNSW para acelerar la búsqueda vectorial (Opcional pero recomendado)
 create index if not exists documents_embedding_idx 
 on documents 
@@ -30,12 +49,12 @@ as $$
 begin
   return query
   select
-    id,
-    content,
-    metadata,
+    documents.id,
+    documents.content,
+    documents.metadata,
     1 - (documents.embedding <=> query_embedding) as similarity
   from documents
-  where metadata @> filter
+  where documents.metadata @> filter
   order by documents.embedding <=> query_embedding
   limit match_count;
 end;
