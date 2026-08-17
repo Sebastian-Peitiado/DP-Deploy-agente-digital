@@ -59,14 +59,14 @@ def chat_endpoint(request: ChatRequest):
             detail=f"Ocurrió un error al procesar tu consulta: {str(e)}"
         )
 
-# Servir archivos estáticos del frontend si se ejecuta el backend de forma local/monolítica
-frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "frontend")
-if os.path.exists(frontend_path):
-    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+# Servir archivos estáticos del frontend en la raíz /
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+frontend_path = os.path.join(base_dir, "frontend")
+if not os.path.exists(frontend_path):
+    frontend_path = os.path.join(os.path.dirname(base_dir), "frontend")
 
-    @app.get("/")
-    def read_root():
-        return FileResponse(os.path.join(frontend_path, "index.html"))
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
