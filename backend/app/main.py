@@ -24,6 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from app.database import save_chat_log, get_recent_chat_logs
+
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Rol del emisor: 'user' o 'assistant'")
     content: str = Field(..., description="Contenido del mensaje")
@@ -31,6 +33,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., description="Pregunta del usuario")
     history: Optional[List[ChatMessage]] = Field(default=[], description="Historial previo de la conversación")
+    session_id: Optional[str] = Field(default=None, description="ID de sesión único del usuario")
 
 class ChatResponse(BaseModel):
     response: str = Field(..., description="Respuesta generada por el agente con enlaces oficiales")
@@ -43,6 +46,11 @@ def health_check():
         "database": "Supabase pgvector"
     }
 
+@app.get("/api/logs")
+def get_logs(limit: int = 50):
+    """Devuelve los registros de chats recientes almacenados en Supabase."""
+    return get_recent_chat_logs(limit=limit)
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest):
     if not request.message or not request.message.strip():
@@ -51,6 +59,14 @@ def chat_endpoint(request: ChatRequest):
     try:
         history_dicts = [msg.model_dump() for msg in request.history] if request.history else []
         reply = run_agent_query(user_input=request.message, history=history_dicts)
+
+        # Guardar interacción en la tabla chat_logs de Supabase
+        save_chat_log(
+            user_message=request.message,
+            bot_response=reply,
+            session_id=request.session_id
+        )
+
         return ChatResponse(response=reply)
     except Exception as e:
         print(f"❌ Error procesando consulta: {e}")

@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Historial local de conversación
     let chatHistory = [];
 
+    // Generar o recuperar ID de sesión único del usuario
+    let sessionId = localStorage.getItem('uba_agent_session_id');
+    if (!sessionId) {
+        sessionId = 'session_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+        localStorage.setItem('uba_agent_session_id', sessionId);
+    }
+
     // Determinar la URL del API Backend (relativa si es el mismo servidor o localhost si es dev)
     const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:8000'
@@ -45,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     message: messageText,
-                    history: chatHistory
+                    history: chatHistory,
+                    session_id: sessionId
                 })
             });
 

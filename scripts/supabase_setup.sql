@@ -59,3 +59,27 @@ begin
   limit match_count;
 end;
 $$;
+
+-- 5. Crear tabla para almacenar logs de chat e interacciones de usuarios
+create table if not exists chat_logs (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  session_id text,
+  user_message text not null,
+  bot_response text not null
+);
+
+-- Habilitar RLS en chat_logs
+alter table chat_logs enable row level security;
+
+-- Permitir inserción de logs
+create policy "Permitir insercion de logs" 
+on chat_logs for insert 
+to anon, authenticated, service_role 
+with check (true);
+
+-- Permitir lectura de logs solo a service_role (panel admin)
+create policy "Permitir lectura de logs" 
+on chat_logs for select 
+to anon, authenticated, service_role 
+using (true);

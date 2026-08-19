@@ -20,3 +20,23 @@ def get_vector_store() -> SupabaseVectorStore:
         table_name="documents",
         query_name="match_documents"
     )
+
+def save_chat_log(user_message: str, bot_response: str, session_id: str = None):
+    try:
+        client = get_supabase_client()
+        client.table("chat_logs").insert({
+            "user_message": user_message,
+            "bot_response": bot_response,
+            "session_id": session_id
+        }).execute()
+    except Exception as e:
+        print(f"⚠️ Error al guardar log de chat en Supabase: {e}")
+
+def get_recent_chat_logs(limit: int = 50):
+    try:
+        client = get_supabase_client()
+        res = client.table("chat_logs").select("*").order("created_at", desc=True).limit(limit).execute()
+        return res.data
+    except Exception as e:
+        print(f"⚠️ Error al consultar logs de chat: {e}")
+        return []
