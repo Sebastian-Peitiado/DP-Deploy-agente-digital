@@ -40,3 +40,17 @@ def get_recent_chat_logs(limit: int = 50):
     except Exception as e:
         print(f"⚠️ Error al consultar logs de chat: {e}")
         return []
+
+def get_session_history(session_id: str):
+    """Obtiene el historial ordenado de mensajes para un session_id dado."""
+    try:
+        client = get_supabase_client()
+        res = client.table("chat_logs").select("user_message, bot_response, created_at").eq("session_id", session_id).order("created_at", desc=False).execute()
+        history = []
+        for row in res.data:
+            history.append({"role": "user", "content": row["user_message"]})
+            history.append({"role": "assistant", "content": row["bot_response"]})
+        return history
+    except Exception as e:
+        print(f"⚠️ Error al obtener historial de la sesión {session_id}: {e}")
+        return []

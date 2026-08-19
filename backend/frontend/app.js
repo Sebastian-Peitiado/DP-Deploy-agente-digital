@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
+    const newChatBtn = document.getElementById('new-chat-btn');
 
     // Historial local de conversación
     let chatHistory = [];
@@ -9,8 +10,68 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generar o recuperar ID de sesión único del usuario
     let sessionId = localStorage.getItem('uba_agent_session_id');
     if (!sessionId) {
+        createNewSession();
+    } else {
+        loadSessionHistory();
+    }
+
+    function createNewSession() {
         sessionId = 'session_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
         localStorage.setItem('uba_agent_session_id', sessionId);
+        chatHistory = [];
+    }
+
+    async function loadSessionHistory() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/history/${sessionId}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.history && data.history.length > 0) {
+                    chatHistory = data.history;
+                    
+                    // Ocultar sugerencias rápidas si hay historial previo
+                    const quickSuggestions = document.getElementById('quick-suggestions');
+                    if (quickSuggestions) {
+                        quickSuggestions.style.display = 'none';
+                    }
+
+                    // Renderizar mensajes del historial
+                    data.history.forEach(msg => {
+                        appendMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('No se pudo cargar el historial previo:', e);
+        }
+    }
+
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            createNewSession();
+            resetChatUI();
+        });
+    }
+
+    function resetChatUI() {
+        chatMessages.innerHTML = `
+            <div class="message system-message">
+                <div class="avatar">🏛️</div>
+                <div class="bubble">
+                    <p><strong>¡Nueva conversación iniciada!</strong></p>
+                    <p>Soy el Asistente Virtual Oficial de FAQs de la UBA. ¿En qué te puedo ayudar hoy?</p>
+                </div>
+            </div>
+            <div class="quick-suggestions" id="quick-suggestions">
+                <p class="suggestions-title">💡 Preguntas frecuentes:</p>
+                <div class="pills-container">
+                    <button class="pill" onclick="sendQuickQuery('¿Cómo me inscribo al CBC y cuál es la web oficial?')">📝 Inscripción al CBC</button>
+                    <button class="pill" onclick="sendQuickQuery('¿Cómo legalizar mi título secundario o universitario en TAD-UBA?')">📜 Legalizaciones (TAD-UBA)</button>
+                    <button class="pill" onclick="sendQuickQuery('¿Cómo accedo al SIU Guaraní y cuáles son sus funciones?')">🎓 Acceso SIU Guaraní</button>
+                    <button class="pill" onclick="sendQuickQuery('¿Qué diferencia hay entre CBC presencial y UBA XXI?')">💻 CBC vs UBA XXI</button>
+                </div>
+            </div>
+        `;
     }
 
     // Determinar la URL del API Backend (relativa si es el mismo servidor o localhost si es dev)

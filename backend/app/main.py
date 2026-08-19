@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.database import save_chat_log, get_recent_chat_logs
+from app.database import save_chat_log, get_recent_chat_logs, get_session_history
 
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Rol del emisor: 'user' o 'assistant'")
@@ -50,6 +50,11 @@ def health_check():
 def get_logs(limit: int = 50):
     """Devuelve los registros de chats recientes almacenados en Supabase."""
     return get_recent_chat_logs(limit=limit)
+
+@app.get("/api/history/{session_id}")
+def get_history_by_session(session_id: str):
+    """Devuelve el historial previo de mensajes para retomar la conversación."""
+    return {"history": get_session_history(session_id)}
 
 @app.post("/api/chat", response_model=ChatResponse)
 def chat_endpoint(request: ChatRequest):
