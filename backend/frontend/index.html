@@ -3,80 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de FAQs UBA - Universidad de Buenos Aires</title>
+    <title>Universidad de Buenos Aires - Portal de Orientación y FAQs</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <!-- Simple Markdown Parser -->
+    <!-- Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header Principal -->
-        <header class="header">
-            <div class="header-content">
-                <div class="brand">
-                    <div class="badge">UBA</div>
-                    <div>
-                        <h1>Asistente de FAQs y Trámites UBA</h1>
-                        <p class="subtitle">Consultas sobre CBC, Facultades, Inscripciones y Enlaces Oficiales</p>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button id="new-chat-btn" class="new-chat-btn" title="Iniciar una nueva conversación desde cero">
-                        <span>➕</span> Nueva Conversación
-                    </button>
+    <!-- Fondo principal con overlay -->
+    <div class="bg-overlay"></div>
+
+    <!-- Navegación Superior Institucional -->
+    <nav class="portal-nav">
+        <div class="nav-brand">
+            <div class="uba-badge">UBA</div>
+            <span class="nav-title">Universidad de Buenos Aires</span>
+        </div>
+        <div class="nav-links">
+            <a href="https://www.cbc.uba.ar" target="_blank" rel="noopener">CBC</a>
+            <a href="https://ubaxxi.uba.ar" target="_blank" rel="noopener">UBA XXI</a>
+            <a href="https://guarani.uba.ar" target="_blank" rel="noopener">SIU Guaraní</a>
+            <a href="https://tramitesadistancia.uba.ar" target="_blank" rel="noopener">TAD-UBA</a>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal de la Landing -->
+    <main class="hero-section">
+        <div class="hero-content">
+            <div class="hero-tag">Portal de Orientación Estudiantil</div>
+            <h1 class="hero-title">Tu guía oficial para estudiar en la UBA</h1>
+            <p class="hero-subtitle">
+                Accedé a información oficial y verificada sobre inscripciones al CBC, materias por UBA XXI, trámites en SIU Guaraní y legalización de títulos.
+            </p>
+            <div class="hero-actions">
+                <a href="https://www.uba.ar" target="_blank" rel="noopener" class="btn-primary">
+                    <span>Sitio Web Oficial UBA ↗</span>
+                </a>
+            </div>
+
+            <!-- Accesos directos a portales oficiales -->
+            <div class="cards-grid">
+                <a href="https://www.cbc.uba.ar/inscripciones" target="_blank" rel="noopener" class="info-card">
+                    <div class="card-icon">📝</div>
+                    <h3>Inscripción al CBC</h3>
+                    <p>Requisitos, preingreso online, fechas y selección de sede oficial.</p>
+                </a>
+                <a href="https://ubaxxi.uba.ar" target="_blank" rel="noopener" class="info-card">
+                    <div class="card-icon">💻</div>
+                    <h3>CBC vs UBA XXI</h3>
+                    <p>Modalidades a distancia y presencial para cursar tus materias.</p>
+                </a>
+                <a href="https://tramitesadistancia.uba.ar" target="_blank" rel="noopener" class="info-card">
+                    <div class="card-icon">📜</div>
+                    <h3>Legalizaciones</h3>
+                    <p>Trámites a distancia (TAD-UBA) para títulos secundarios y extranjeros.</p>
+                </a>
+                <a href="https://guarani.uba.ar" target="_blank" rel="noopener" class="info-card">
+                    <div class="card-icon">🎓</div>
+                    <h3>SIU Guaraní</h3>
+                    <p>Gestión académica, inscripción a materias, actas y certificados.</p>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Botón Flotante / Launcher del Popout -->
+    <div class="chat-widget-launcher" id="chat-launcher" title="Abrir Asistente UBA Orienta">
+        <div class="launcher-pulse"></div>
+        <button class="launcher-btn" id="launcher-toggle-btn" aria-label="Abrir asistente de chat">
+            <span class="launcher-icon-chat">💬</span>
+            <span class="launcher-icon-close">✕</span>
+        </button>
+        <div class="launcher-badge" id="launcher-badge">1</div>
+    </div>
+
+    <!-- Ventana Popout del Chat -->
+    <div class="chat-popout" id="chat-popout" aria-hidden="true">
+        <!-- Header del Popout -->
+        <header class="popout-header">
+            <div class="popout-brand">
+                <div class="popout-avatar">🏛️</div>
+                <div class="popout-title-wrap">
+                    <h2>UBA Orienta</h2>
                     <div class="status-indicator">
-                        <span class="dot"></span>
-                        <span class="status-text">En línea</span>
+                        <span class="status-dot"></span>
+                        <span class="status-text">En línea · Asistente Oficial</span>
                     </div>
                 </div>
             </div>
+            <div class="popout-actions">
+                <button id="new-chat-btn" class="popout-action-btn" title="Reiniciar conversación">
+                    <span>➕</span>
+                </button>
+                <button id="close-popout-btn" class="popout-action-btn close-btn" title="Cerrar chat">
+                    <span>✕</span>
+                </button>
+            </div>
         </header>
 
-        <!-- Contenedor del Chat -->
-        <main class="chat-container" id="chat-messages">
-            <!-- Mensaje de bienvenida -->
-            <div class="message system-message">
+        <!-- Mensajes del Chat -->
+        <div class="popout-messages" id="chat-messages">
+            <!-- Mensaje de bienvenida inicial -->
+            <div class="message bot-message">
                 <div class="avatar">🏛️</div>
                 <div class="bubble">
-                    <p><strong>¡Hola! Soy el Asistente Virtual Oficial de FAQs de la UBA.</strong></p>
-                    <p>Puedo ayudarte a resolver tus dudas sobre inscripciones al CBC, acceso a SIU Guaraní, legalizaciones de títulos en TAD-UBA, facultades y calendarios académicos.</p>
-                    <p>Selecciona una pregunta rápida o escribe tu consulta a continuación:</p>
+                    <p><strong>¡Hola! Soy UBA Orienta.</strong></p>
+                    <p>Te ayudo con preguntas frecuentes sobre inscripciones, CBC, UBA XXI, SIU Guaraní, facultades y trámites oficiales.</p>
+                    <p>Elegí una consulta frecuente o escribí tu pregunta:</p>
                 </div>
             </div>
 
             <!-- Sugerencias Rápidas / Pills -->
             <div class="quick-suggestions" id="quick-suggestions">
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC?')">📖 Inscripción al CBC</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar el título secundario?')">📜 Legalizar Título Secundario</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo ingresar al SIU Guaraní?')">🎓 Acceso SIU Guaraní</button>
-                <button class="pill-btn" onclick="sendQuickQuery('Inscripción a materias UBA XXI')">💻 Cursar por UBA XXI</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC?')">📝 Inscripción CBC</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar el título secundario?')">📜 Legalizar Título</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo ingresar al SIU Guaraní?')">🎓 SIU Guaraní</button>
+                <button class="pill-btn" onclick="sendQuickQuery('Inscripción a materias UBA XXI')">💻 Cursar UBA XXI</button>
                 <button class="pill-btn" onclick="sendQuickQuery('¿Cuáles son las Facultades de la UBA?')">🏛️ Facultades UBA</button>
             </div>
-        </main>
+        </div>
 
-        <!-- Formulario de Entrada -->
-        <footer class="input-container">
+        <!-- Input del Chat -->
+        <footer class="popout-footer">
             <form id="chat-form" class="chat-form">
                 <input 
                     type="text" 
                     id="user-input" 
-                    placeholder="Escribe tu consulta sobre la UBA (ej: ¿Dónde legalizar título?)..." 
+                    placeholder="Escribe tu consulta sobre la UBA..." 
                     autocomplete="off"
                     required
                 />
                 <button type="submit" id="send-btn" aria-label="Enviar mensaje">
-                    <span>Enviar</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="22" y1="2" x2="11" y2="13"></line>
                         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                 </button>
             </form>
-            <div class="disclaimer">
-                Respuestas generadas con IA basadas exclusivamente en información y sitios web oficiales de la UBA.
+            <div class="popout-disclaimer">
+                Respuestas con IA basadas exclusivamente en fuentes oficiales de la UBA.
             </div>
         </footer>
     </div>

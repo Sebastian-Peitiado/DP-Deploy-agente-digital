@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
+    const chatPopout = document.getElementById('chat-popout');
+    const chatLauncher = document.getElementById('chat-launcher');
+    const launcherToggleBtn = document.getElementById('launcher-toggle-btn');
+    const closePopoutBtn = document.getElementById('close-popout-btn');
+    const launcherBadge = document.getElementById('launcher-badge');
     const chatForm = document.getElementById('chat-form');
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
@@ -7,7 +13,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // Historial local de conversación
     let chatHistory = [];
 
-    // Generar o recuperar ID de sesión único del usuario
+    // Determinar la URL del API Backend (relativa si es el mismo servidor o localhost si es dev)
+    const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:8000'
+        : '';
+
+    // =========================================================================
+    // CONTROL DEL POPOUT (ABRIR / CERRAR)
+    // =========================================================================
+    function togglePopout() {
+        const isOpen = chatPopout.classList.contains('open');
+        if (isOpen) {
+            closePopout();
+        } else {
+            openPopout();
+        }
+    }
+
+    function openPopout() {
+        chatPopout.classList.add('open');
+        chatPopout.setAttribute('aria-hidden', 'false');
+        chatLauncher.classList.add('active');
+        
+        // Ocultar badge de notificación al abrir
+        if (launcherBadge) {
+            launcherBadge.style.display = 'none';
+        }
+
+        // Auto-focus en el input
+        setTimeout(() => {
+            if (userInput) userInput.focus();
+        }, 200);
+
+        scrollToBottom();
+    }
+
+    function closePopout() {
+        chatPopout.classList.remove('open');
+        chatPopout.setAttribute('aria-hidden', 'true');
+        chatLauncher.classList.remove('active');
+    }
+
+    if (launcherToggleBtn) {
+        launcherToggleBtn.addEventListener('click', togglePopout);
+    }
+
+    if (closePopoutBtn) {
+        closePopoutBtn.addEventListener('click', closePopout);
+    }
+
+    // Permitir cerrar con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && chatPopout.classList.contains('open')) {
+            closePopout();
+        }
+    });
+
+    window.sendQuickQuery = function(text) {
+        sendMessage(text);
+    };
+
+    // =========================================================================
+    // GESTIÓN DE SESIONES & HISTORIAL
+    // =========================================================================
     let sessionId = localStorage.getItem('uba_agent_session_id');
     if (!sessionId) {
         createNewSession();
@@ -29,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.history && data.history.length > 0) {
                     chatHistory = data.history;
                     
-                    // Ocultar sugerencias rápidas si hay historial previo
+                    // Ocultar sugerencias si ya hay conversación previa
                     const quickSuggestions = document.getElementById('quick-suggestions');
                     if (quickSuggestions) {
                         quickSuggestions.style.display = 'none';
@@ -55,30 +123,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetChatUI() {
         chatMessages.innerHTML = `
-            <div class="message system-message">
+            <div class="message bot-message">
                 <div class="avatar">🏛️</div>
                 <div class="bubble">
                     <p><strong>¡Nueva conversación iniciada!</strong></p>
-                    <p>Soy el Asistente Virtual Oficial de FAQs de la UBA. ¿En qué te puedo ayudar hoy?</p>
+                    <p>Soy UBA Orienta. ¿En qué tema universitario te puedo orientar hoy?</p>
                 </div>
             </div>
             <div class="quick-suggestions" id="quick-suggestions">
-                <p class="suggestions-title">💡 Preguntas frecuentes:</p>
-                <div class="pills-container">
-                    <button class="pill" onclick="sendQuickQuery('¿Cómo me inscribo al CBC y cuál es la web oficial?')">📝 Inscripción al CBC</button>
-                    <button class="pill" onclick="sendQuickQuery('¿Cómo legalizar mi título secundario o universitario en TAD-UBA?')">📜 Legalizaciones (TAD-UBA)</button>
-                    <button class="pill" onclick="sendQuickQuery('¿Cómo accedo al SIU Guaraní y cuáles son sus funciones?')">🎓 Acceso SIU Guaraní</button>
-                    <button class="pill" onclick="sendQuickQuery('¿Qué diferencia hay entre CBC presencial y UBA XXI?')">💻 CBC vs UBA XXI</button>
-                </div>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC y cuál es la web oficial?')">📝 Inscripción CBC</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar mi título secundario en TAD-UBA?')">📜 Legalizaciones</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo accedo al SIU Guaraní?')">🎓 SIU Guaraní</button>
+                <button class="pill-btn" onclick="sendQuickQuery('¿Qué diferencia hay entre CBC presencial y UBA XXI?')">💻 CBC vs UBA XXI</button>
             </div>
         `;
+        if (userInput) userInput.focus();
     }
 
-    // Determinar la URL del API Backend (relativa si es el mismo servidor o localhost si es dev)
-    const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:8000'
-        : '';
-
+    // =========================================================================
+    // ENVÍO DE MENSAJES AL BACKEND
+    // =========================================================================
     chatForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const message = userInput.value.trim();
@@ -88,21 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.value = '';
     });
 
-    window.sendQuickQuery = function(text) {
-        sendMessage(text);
-    };
-
     async function sendMessage(messageText) {
         // Renderizar mensaje del usuario
         appendMessage('user', messageText);
 
-        // Ocultar pills de sugerencia al iniciar conversación activa
+        // Ocultar pills de sugerencia
         const quickSuggestions = document.getElementById('quick-suggestions');
         if (quickSuggestions) {
             quickSuggestions.style.display = 'none';
         }
 
-        // Mostrar indicador de carga/escritura
+        // Indicador de escritura
         const loadingMessageId = appendLoadingIndicator();
 
         try {
@@ -128,11 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             const botReply = data.response;
 
-            // Actualizar el historial
+            // Actualizar historial
             chatHistory.push({ role: 'user', content: messageText });
             chatHistory.push({ role: 'assistant', content: botReply });
 
-            // Renderizar respuesta del bot con marcado Markdown
+            // Renderizar respuesta
             appendMessage('bot', botReply);
 
         } catch (error) {
@@ -153,11 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
         bubble.classList.add('bubble');
 
         if (sender === 'bot') {
-            // Utilizar Marked.js para renderizar respuestas con Markdown y enlaces
             if (typeof marked !== 'undefined') {
                 bubble.innerHTML = marked.parse(text);
                 
-                // Asegurar que los enlaces se abran en nueva pestaña
+                // Abrir enlaces en nueva pestaña
                 const links = bubble.querySelectorAll('a');
                 links.forEach(link => {
                     link.setAttribute('target', '_blank');
