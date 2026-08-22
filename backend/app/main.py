@@ -34,6 +34,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., description="Pregunta del usuario")
     history: Optional[List[ChatMessage]] = Field(default=[], description="Historial previo de la conversación")
     session_id: Optional[str] = Field(default=None, description="ID de sesión único del usuario")
+    system_prompt: Optional[str] = Field(default=None, description="System prompt personalizado opcional para el agente")
 
 class ChatResponse(BaseModel):
     response: str = Field(..., description="Respuesta generada por el agente con enlaces oficiales")
@@ -63,7 +64,11 @@ def chat_endpoint(request: ChatRequest):
 
     try:
         history_dicts = [msg.model_dump() for msg in request.history] if request.history else []
-        reply = run_agent_query(user_input=request.message, history=history_dicts)
+        reply = run_agent_query(
+            user_input=request.message,
+            history=history_dicts,
+            system_prompt=request.system_prompt
+        )
 
         # Guardar interacción en la tabla chat_logs de Supabase
         save_chat_log(

@@ -106,3 +106,43 @@ Sube el contenido de la carpeta `frontend/` a cualquier servicio de hosting est�
     "history": []
   }
   ```
+
+---
+
+## 💬 Gestión de Conversaciones y Soporte con Chatwoot
+
+Para monitorear todas las conversaciones en tiempo real, auditar el desempeño de la IA y permitir la **intervención de operadores humanos (Handover)**, se integra **Chatwoot** (plataforma omnicanal Open Source).
+
+### 🚀 Acceso y Configuración Inicial (Local)
+1. **Acceder a la plataforma:**
+   Ingresa desde tu navegador a: **[http://localhost:3000](http://localhost:3000)** (o `http://localhost:3000/installation/onboarding`).
+2. **Onboarding Inicial (Super Admin):**
+   * **Nombre de la Organización:** Ej. `UBA Digital` o `Soporte Estudiantil`.
+   * **Nombre del Agente:** Tu nombre o el del operador.
+   * **Email:** Puedes usar cualquier correo (incluyendo `@gmail.com`, sin restricciones corporativas).
+   * **Contraseña:** Define tu clave de acceso.
+
+### 🛠️ Comandos de Gestión (Docker Compose)
+Los archivos de configuración y base de datos de Chatwoot residen en `~/chatwoot` (o `/home/seba/chatwoot`):
+
+* **Iniciar Chatwoot:**
+  ```bash
+  cd ~/chatwoot && docker compose up -d
+  ```
+* **Ver el estado de los servicios:**
+  ```bash
+  cd ~/chatwoot && docker compose ps
+  ```
+* **Ver registros / logs en vivo:**
+  ```bash
+  cd ~/chatwoot && docker compose logs -f
+  ```
+* **Detener los servicios:**
+  ```bash
+  cd ~/chatwoot && docker compose stop
+  ```
+
+### ☁️ Consideración para Producción (24/7)
+La instalación local permite desarrollar y probar la conexión con el bot. Para el entorno de producción final de la UBA:
+* Se desplegará Chatwoot con Docker Compose en un servidor **VPS en la nube (ej. Hetzner o DigitalOcean)** para garantizar disponibilidad 24/7 y acceso a múltiples operadores simultáneos desde cualquier red.
+
