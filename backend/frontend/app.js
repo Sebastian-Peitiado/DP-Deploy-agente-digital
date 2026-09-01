@@ -76,67 +76,118 @@ document.addEventListener('DOMContentLoaded', () => {
     // =========================================================================
     // GESTIÓN DE SESIONES & HISTORIAL
     // =========================================================================
-    let sessionId = localStorage.getItem('uba_agent_session_id');
-    if (!sessionId) {
-        createNewSession();
-    } else {
-        loadSessionHistory();
+    let sessionId = null;
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const chatScreen = document.getElementById('chat-screen');
+    const btnLoginSession = document.getElementById('btn-login-session');
+    const btnNewChat = document.getElementById('btn-new-chat');
+    const inputLoginSession = document.getElementById('login-session-id');
+    const generateSessionCheckbox = document.getElementById('generate-session-checkbox');
+
+    // Mostrar siempre el welcome screen al cargar
+    if (welcomeScreen && chatScreen) {
+        welcomeScreen.style.display = 'flex';
+        chatScreen.style.display = 'none';
     }
 
-    function createNewSession() {
-        sessionId = 'session_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
-        localStorage.setItem('uba_agent_session_id', sessionId);
+    function showChatScreen() {
+        welcomeScreen.style.display = 'none';
+        chatScreen.style.display = 'flex';
+        if (userInput) userInput.focus();
+    }
+
+    function showWelcomeScreen() {
+        welcomeScreen.style.display = 'flex';
+        chatScreen.style.display = 'none';
         chatHistory = [];
+        sessionId = null;
+        resetChatUI();
     }
 
-    async function loadSessionHistory() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/history/${sessionId}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.history && data.history.length > 0) {
-                    chatHistory = data.history;
-                    
-                    // Ocultar sugerencias si ya hay conversación previa
-                    const quickSuggestions = document.getElementById('quick-suggestions');
-                    if (quickSuggestions) {
-                        quickSuggestions.style.display = 'none';
-                    }
-
-                    // Renderizar mensajes del historial
-                    data.history.forEach(msg => {
-                        appendMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
-                    });
-                }
+    // Login Flow
+    if (btnLoginSession) {
+        btnLoginSession.addEventListener('click', async () => {
+            const id = inputLoginSession.value.trim();
+            if (!id) {
+                alert('Por favor, ingresá un Session ID válido.');
+                return;
             }
-        } catch (e) {
-            console.warn('No se pudo cargar el historial previo:', e);
-        }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/history/${id}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.history && data.history.length > 0) {
+                        sessionId = id;
+                        chatHistory = data.history;
+                        
+                        // Renderizar
+                        resetChatUI(false);
+                        const quickSuggestions = document.getElementById('quick-suggestions');
+                        if (quickSuggestions) quickSuggestions.style.display = 'none';
+
+                        data.history.forEach(msg => {
+                            appendMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+                        });
+                        showChatScreen();
+                    } else {
+                        alert('No se encontró historial para ese Session ID.');
+                    }
+                } else {
+                    alert('Error al buscar el Session ID.');
+                }
+            } catch (e) {
+                console.warn('No se pudo cargar el historial:', e);
+                alert('Error de conexión.');
+            }
+        });
+    }
+
+    // New Chat Flow
+    if (btnNewChat) {
+        btnNewChat.addEventListener('click', () => {
+            chatHistory = [];
+            if (generateSessionCheckbox.checked) {
+                sessionId = 'session_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+                resetChatUI(true, sessionId);
+            } else {
+                sessionId = null;
+                resetChatUI(true);
+            }
+            showChatScreen();
+        });
     }
 
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
-            createNewSession();
-            resetChatUI();
+            showWelcomeScreen();
         });
     }
 
-    function resetChatUI() {
-        chatMessages.innerHTML = `
-            <div class="message bot-message">
-                <div class="avatar">🏛️</div>
-                <div class="bubble">
-                    <p><strong>¡Nueva conversación iniciada!</strong></p>
-                    <p>Soy UBA Orienta. ¿En qué tema universitario te puedo orientar hoy?</p>
+    function resetChatUI(isNew = true, newSessionId = null) {
+        chatMessages.innerHTML = '';
+        if (isNew) {
+            let sessionMessage = newSessionId 
+                ? `<p style="margin-top: 10px; padding: 8px; background: rgba(0, 163, 224, 0.1); border-radius: 6px; border: 1px solid rgba(0, 163, 224, 0.3); font-size: 12px;">Tu Session ID para retomar este chat en el futuro es:<br><strong style="color: #38BDF8; font-size: 14px; user-select: all;">${newSessionId}</strong></p>`
+                : '';
+
+            chatMessages.innerHTML = `
+                <div class="message bot-message">
+                    <div class="avatar">🏛️</div>
+                    <div class="bubble">
+                        <p><strong>¡Hola! Soy UBA Orienta.</strong></p>
+                        <p>Te ayudo con preguntas frecuentes sobre inscripciones, CBC, UBA XXI, SIU Guaraní, facultades y trámites oficiales.</p>
+                        ${sessionMessage}
+                    </div>
                 </div>
-            </div>
-            <div class="quick-suggestions" id="quick-suggestions">
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC y cuál es la web oficial?')">📝 Inscripción CBC</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar mi título secundario en TAD-UBA?')">📜 Legalizaciones</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo accedo al SIU Guaraní?')">🎓 SIU Guaraní</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Qué diferencia hay entre CBC presencial y UBA XXI?')">💻 CBC vs UBA XXI</button>
-            </div>
-        `;
+                <div class="quick-suggestions" id="quick-suggestions">
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC?')">📝 Inscripción CBC</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar el título secundario?')">📜 Legalizar Título</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Cómo ingresar al SIU Guaraní?')">🎓 SIU Guaraní</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('Inscripción a materias UBA XXI')">💻 Cursar UBA XXI</button>
+                </div>
+            `;
+        }
         if (userInput) userInput.focus();
     }
 

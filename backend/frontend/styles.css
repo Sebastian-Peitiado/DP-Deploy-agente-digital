@@ -692,3 +692,89 @@ body {
         right: 20px;
     }
 }
+
+/* ==========================================================================
+   WELCOME SCREEN
+   ========================================================================== */
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    height: 100%;
+    background: var(--bg-card);
+    overflow-y: auto;
+}
+
+.welcome-header {
+    text-align: center;
+    margin-bottom: 24px;
+    margin-top: 20px;
+}
+
+.welcome-header .popout-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 32px;
+    margin: 0 auto 16px;
+}
+
+.welcome-header h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #FFFFFF;
+    margin-bottom: 8px;
+}
+
+.welcome-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.welcome-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.welcome-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin-bottom: 12px;
+}
+
+.welcome-card input[type="text"] {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: #FFFFFF;
+    font-size: 14px;
+    margin-bottom: 8px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.welcome-card input[type="text"]:focus {
+    border-color: var(--accent);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}

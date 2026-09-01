@@ -81,71 +81,98 @@
 
     <!-- Ventana Popout del Chat -->
     <div class="chat-popout" id="chat-popout" aria-hidden="true">
-        <!-- Header del Popout -->
-        <header class="popout-header">
-            <div class="popout-brand">
+        <!-- Pantalla de Bienvenida -->
+        <div id="welcome-screen" class="welcome-screen">
+            <div class="welcome-header">
                 <div class="popout-avatar">🏛️</div>
-                <div class="popout-title-wrap">
-                    <h2>UBA Orienta</h2>
-                    <div class="status-indicator">
-                        <span class="status-dot"></span>
-                        <span class="status-text">En línea · Asistente Oficial</span>
-                    </div>
-                </div>
+                <h2>Bienvenido a UBA Orienta</h2>
+                <p>Seleccioná cómo deseas continuar</p>
             </div>
-            <div class="popout-actions">
-                <button id="new-chat-btn" class="popout-action-btn" title="Reiniciar conversación">
-                    <span>➕</span>
-                </button>
-                <button id="close-popout-btn" class="popout-action-btn close-btn" title="Cerrar chat">
-                    <span>✕</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Mensajes del Chat -->
-        <div class="popout-messages" id="chat-messages">
-            <!-- Mensaje de bienvenida inicial -->
-            <div class="message bot-message">
-                <div class="avatar">🏛️</div>
-                <div class="bubble">
-                    <p><strong>¡Hola! Soy UBA Orienta.</strong></p>
-                    <p>Te ayudo con preguntas frecuentes sobre inscripciones, CBC, UBA XXI, SIU Guaraní, facultades y trámites oficiales.</p>
-                    <p>Elegí una consulta frecuente o escribí tu pregunta:</p>
-                </div>
+            
+            <div class="welcome-card">
+                <h3>Retomar conversación</h3>
+                <input type="text" id="login-session-id" placeholder="Ingresá tu Session ID" autocomplete="off">
+                <button id="btn-login-session" class="btn-primary" style="width:100%; margin-top:8px;">Ingresar</button>
             </div>
 
-            <!-- Sugerencias Rápidas / Pills -->
-            <div class="quick-suggestions" id="quick-suggestions">
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC?')">📝 Inscripción CBC</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar el título secundario?')">📜 Legalizar Título</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cómo ingresar al SIU Guaraní?')">🎓 SIU Guaraní</button>
-                <button class="pill-btn" onclick="sendQuickQuery('Inscripción a materias UBA XXI')">💻 Cursar UBA XXI</button>
-                <button class="pill-btn" onclick="sendQuickQuery('¿Cuáles son las Facultades de la UBA?')">🏛️ Facultades UBA</button>
+            <div class="welcome-card">
+                <h3>Nueva conversación</h3>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="generate-session-checkbox" checked>
+                    Generar Session ID para retomar luego
+                </label>
+                <button id="btn-new-chat" class="btn-secondary" style="width:100%; margin-top:8px;">Comenzar</button>
             </div>
         </div>
 
-        <!-- Input del Chat -->
-        <footer class="popout-footer">
-            <form id="chat-form" class="chat-form">
-                <input 
-                    type="text" 
-                    id="user-input" 
-                    placeholder="Escribe tu consulta sobre la UBA..." 
-                    autocomplete="off"
-                    required
-                />
-                <button type="submit" id="send-btn" aria-label="Enviar mensaje">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                </button>
-            </form>
-            <div class="popout-disclaimer">
-                Respuestas con IA basadas exclusivamente en fuentes oficiales de la UBA.
+        <!-- Pantalla Principal del Chat -->
+        <div id="chat-screen" style="display: none; flex-direction: column; height: 100%;">
+            <!-- Header del Popout -->
+            <header class="popout-header">
+                <div class="popout-brand">
+                    <div class="popout-avatar">🏛️</div>
+                    <div class="popout-title-wrap">
+                        <h2>UBA Orienta</h2>
+                        <div class="status-indicator">
+                            <span class="status-dot"></span>
+                            <span class="status-text">En línea · Asistente Oficial</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="popout-actions">
+                    <button id="new-chat-btn" class="popout-action-btn" title="Reiniciar conversación">
+                        <span>➕</span>
+                    </button>
+                    <button id="close-popout-btn" class="popout-action-btn close-btn" title="Cerrar chat">
+                        <span>✕</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Mensajes del Chat -->
+            <div class="popout-messages" id="chat-messages">
+                <!-- Mensaje de bienvenida inicial -->
+                <div class="message bot-message">
+                    <div class="avatar">🏛️</div>
+                    <div class="bubble">
+                        <p><strong>¡Hola! Soy UBA Orienta.</strong></p>
+                        <p>Te ayudo con preguntas frecuentes sobre inscripciones, CBC, UBA XXI, SIU Guaraní, facultades y trámites oficiales.</p>
+                        <p>Elegí una consulta frecuente o escribí tu pregunta:</p>
+                    </div>
+                </div>
+
+                <!-- Sugerencias Rápidas / Pills -->
+                <div class="quick-suggestions" id="quick-suggestions">
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Cómo me inscribo al CBC?')">📝 Inscripción CBC</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Dónde legalizar el título secundario?')">📜 Legalizar Título</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Cómo ingresar al SIU Guaraní?')">🎓 SIU Guaraní</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('Inscripción a materias UBA XXI')">💻 Cursar UBA XXI</button>
+                    <button class="pill-btn" onclick="sendQuickQuery('¿Cuáles son las Facultades de la UBA?')">🏛️ Facultades UBA</button>
+                </div>
             </div>
-        </footer>
+
+            <!-- Input del Chat -->
+            <footer class="popout-footer">
+                <form id="chat-form" class="chat-form">
+                    <input 
+                        type="text" 
+                        id="user-input" 
+                        placeholder="Escribe tu consulta sobre la UBA..." 
+                        autocomplete="off"
+                        required
+                    />
+                    <button type="submit" id="send-btn" aria-label="Enviar mensaje">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+                <div class="popout-disclaimer">
+                    Respuestas con IA basadas exclusivamente en fuentes oficiales de la UBA.
+                </div>
+            </footer>
+        </div>
     </div>
 
     <script src="app.js"></script>
