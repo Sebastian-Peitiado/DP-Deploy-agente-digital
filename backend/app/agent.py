@@ -14,12 +14,26 @@ from app.database import get_vector_store
 # Intentamos importar Langfuse para observabilidad
 try:
     from langfuse.callback import CallbackHandler
+    from langfuse import Langfuse
     HAS_LANGFUSE = True
+    
+    if os.getenv("LANGFUSE_SECRET_KEY") and os.getenv("LANGFUSE_PUBLIC_KEY"):
+        langfuse_client = Langfuse()
+    else:
+        langfuse_client = None
 except ImportError:
     HAS_LANGFUSE = False
+    langfuse_client = None
 
 def load_default_system_prompt() -> str:
-    """Carga el system prompt base desde el archivo markdown."""
+    """Carga el system prompt base desde Langfuse (fallback a archivo markdown)."""
+    if langfuse_client:
+        try:
+            # Obtenemos el prompt con el nombre "uba_orienta_system_prompt"
+            return langfuse_client.get_prompt("uba_orienta_system_prompt").prompt
+        except Exception as e:
+            print(f"No se pudo cargar system_prompt desde Langfuse, usando local: {e}")
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     prompt_path = os.path.join(base_dir, "prompts", "system_prompt.md")
     
@@ -34,7 +48,13 @@ def load_default_system_prompt() -> str:
     return "Eres UBA Orienta, un asistente servicial para responder preguntas de la Universidad de Buenos Aires."
 
 def load_guardrail_prompt() -> str:
-    """Carga el prompt del guardarriel desde el archivo markdown."""
+    """Carga el prompt del guardarriel desde Langfuse (fallback a archivo markdown)."""
+    if langfuse_client:
+        try:
+            return langfuse_client.get_prompt("guardrail_prompt").prompt
+        except Exception as e:
+            print(f"No se pudo cargar guardrail_prompt desde Langfuse, usando local: {e}")
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     prompt_path = os.path.join(base_dir, "prompts", "guardrail_prompt.md")
     
@@ -78,11 +98,24 @@ def get_agent_graph(system_prompt: Optional[str] = None):
     )
 
     tools = [uba_retriever_tool]
+    # Parámetros por defecto para el LLM principal
+    llm_model = "gpt-4o-mini"
+    llm_temperature = 0.1
+
+    if langfuse_client:
+        try:
+            # Obtenemos el config desde el prompt de Langfuse
+            lf_sys = langfuse_client.get_prompt("uba_orienta_system_prompt")
+            config = lf_sys.config or {}
+            llm_model = config.get("model", llm_model)
+            llm_temperature = config.get("temperature", llm_temperature)
+        except Exception as e:
+            print(f"No se pudo obtener config de Langfuse para el sistema, usando defaults: {e}")
 
     # LLM principal
     llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.1,
+        model=llm_model,
+        temperature=llm_temperature,
         openai_api_key=settings.OPENAI_API_KEY
     )
 
@@ -94,13 +127,29 @@ def get_agent_graph(system_prompt: Optional[str] = None):
         messages = state["messages"]
         last_message = messages[-1]
         
-        guardrail_template = load_guardrail_prompt()
-        guardrail_prompt = guardrail_template.format(message=last_message.content)
+        guardrail_prompt = None
+        guardrail_model = "gpt-4o-mini"
+        guardrail_temp = 0.0
         
-        # Usamos temperature 0 para que sea determinista
+        if langfuse_client:
+            try:
+                lf_prompt = langfuse_client.get_prompt("guardrail_prompt")
+                guardrail_prompt = lf_prompt.compile(message=last_message.content)
+                config = lf_prompt.config or {}
+                guardrail_model = config.get("model", guardrail_model)
+                guardrail_temp = config.get("temperature", guardrail_temp)
+            except Exception as e:
+                print(f"No se pudo compilar guardrail_prompt desde Langfuse: {e}")
+                
+        if not guardrail_prompt:
+            guardrail_template = load_guardrail_prompt()
+            # En caso de que el template venga de Langfuse con {{message}}, lo reemplazamos
+            guardrail_template = guardrail_template.replace("{{message}}", "{message}")
+            guardrail_prompt = guardrail_template.format(message=last_message.content)
+        
         guardrail_llm = ChatOpenAI(
-            model="gpt-4o-mini", 
-            temperature=0.0,
+            model=guardrail_model, 
+            temperature=guardrail_temp,
             openai_api_key=settings.OPENAI_API_KEY
         )
         res = guardrail_llm.invoke(guardrail_prompt)
