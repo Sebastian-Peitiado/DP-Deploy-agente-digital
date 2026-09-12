@@ -120,7 +120,7 @@ def get_agent_graph(system_prompt: Optional[str] = None):
     )
 
     # Creamos el Agente Interno usando prebuilt react agent de LangGraph
-    uba_agent = create_react_agent(llm, tools, state_modifier=system_prompt)
+    uba_agent = create_react_agent(llm, tools, prompt=system_prompt)
 
     # NODO 1: Guardarriel
     def guardrail_node(state: AgentState):
