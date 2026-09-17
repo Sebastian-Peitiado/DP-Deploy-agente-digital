@@ -3,6 +3,7 @@ from typing import List, Dict, Any, Optional, TypedDict, Annotated, Sequence
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import create_retriever_tool
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.runnables import RunnableConfig
 
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -13,12 +14,12 @@ from app.database import get_vector_store
 
 # Intentamos importar Langfuse para observabilidad
 try:
-    from langfuse.callback import CallbackHandler
-    from langfuse import Langfuse
+    from langfuse.langchain import CallbackHandler
+    from langfuse import get_client, Langfuse
     HAS_LANGFUSE = True
     
     if os.getenv("LANGFUSE_SECRET_KEY") and os.getenv("LANGFUSE_PUBLIC_KEY"):
-        langfuse_client = Langfuse()
+        langfuse_client = get_client()
     else:
         langfuse_client = None
 except ImportError:
@@ -123,7 +124,7 @@ def get_agent_graph(system_prompt: Optional[str] = None):
     uba_agent = create_react_agent(llm, tools, prompt=system_prompt)
 
     # NODO 1: Guardarriel
-    def guardrail_node(state: AgentState):
+    def guardrail_node(state: AgentState, config: Optional[RunnableConfig] = None):
         messages = state["messages"]
         last_message = messages[-1]
         
@@ -135,9 +136,9 @@ def get_agent_graph(system_prompt: Optional[str] = None):
             try:
                 lf_prompt = langfuse_client.get_prompt("guardrail_prompt")
                 guardrail_prompt = lf_prompt.compile(message=last_message.content)
-                config = lf_prompt.config or {}
-                guardrail_model = config.get("model", guardrail_model)
-                guardrail_temp = config.get("temperature", guardrail_temp)
+                prompt_config = lf_prompt.config or {}
+                guardrail_model = prompt_config.get("model", guardrail_model)
+                guardrail_temp = prompt_config.get("temperature", guardrail_temp)
             except Exception as e:
                 print(f"No se pudo compilar guardrail_prompt desde Langfuse: {e}")
                 
@@ -152,7 +153,7 @@ def get_agent_graph(system_prompt: Optional[str] = None):
             temperature=guardrail_temp,
             openai_api_key=settings.OPENAI_API_KEY
         )
-        res = guardrail_llm.invoke(guardrail_prompt)
+        res = guardrail_llm.invoke(guardrail_prompt, config=config)
         
         if "BLOQUEAR" in res.content.upper():
             return {"messages": [AIMessage(content="Lo siento, tu consulta infringe nuestras políticas de respeto y seguridad y no puede ser procesada.")]}
@@ -169,9 +170,9 @@ def get_agent_graph(system_prompt: Optional[str] = None):
         return "uba_orienta"
 
     # NODO 2: UBA Orienta
-    def uba_node(state: AgentState):
-        # Delegamos la ejecución al agente react
-        response = uba_agent.invoke({"messages": state["messages"]})
+    def uba_node(state: AgentState, config: Optional[RunnableConfig] = None):
+        # Delegamos la ejecución al agente react pasando el config (callbacks, metadata, etc.)
+        response = uba_agent.invoke({"messages": state["messages"]}, config=config)
         # add_messages de LangGraph se encarga de deduplicar por ID de mensaje automáticamente
         return {"messages": response["messages"]}
 
@@ -190,6 +191,7 @@ def get_agent_graph(system_prompt: Optional[str] = None):
 def run_agent_query(
     user_input: str,
     history: Optional[List[Dict[str, str]]] = None,
+    session_id: Optional[str] = None,
     system_prompt: Optional[str] = None
 ) -> str:
     """Ejecuta una consulta contra el grafo, integrando Langfuse si está configurado."""
@@ -209,14 +211,29 @@ def run_agent_query(
     formatted_history.append(HumanMessage(content=user_input))
 
     # Configuración de Observabilidad con Langfuse
-    config = {}
+    config: Dict[str, Any] = {}
     if HAS_LANGFUSE and os.getenv("LANGFUSE_SECRET_KEY") and os.getenv("LANGFUSE_PUBLIC_KEY"):
         # Inicializamos el Callback de Langfuse
         langfuse_handler = CallbackHandler()
-        config = {"callbacks": [langfuse_handler]}
+        metadata: Dict[str, Any] = {}
+        if session_id:
+            metadata["langfuse_session_id"] = session_id
+            metadata["session_id"] = session_id
+        config = {
+            "callbacks": [langfuse_handler],
+            "metadata": metadata
+        }
 
     # Invocamos el grafo
     result = graph.invoke({"messages": formatted_history}, config=config)
+
+    # Vaciamos la cola para asegurar el envío inmediato a Langfuse Cloud
+    if HAS_LANGFUSE:
+        try:
+            client = langfuse_client or get_client()
+            client.flush()
+        except Exception as e:
+            print(f"Error al vaciar trazas de Langfuse: {e}")
 
     # Obtenemos la última respuesta del asistente
     final_message = result["messages"][-1]

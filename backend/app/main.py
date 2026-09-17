@@ -67,6 +67,7 @@ def chat_endpoint(request: ChatRequest):
         reply = run_agent_query(
             user_input=request.message,
             history=history_dicts,
+            session_id=request.session_id,
             system_prompt=request.system_prompt
         )
 
