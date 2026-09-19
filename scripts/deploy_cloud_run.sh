@@ -75,19 +75,28 @@ if [ -f "$ENV_FILE" ]; then
         KEY=$(echo "$line" | cut -d '=' -f 1 | xargs)
         VAL=$(echo "$line" | cut -d '=' -f 2- | xargs)
         
-        # Excluir PORT local
+        # Excluir PORT (Cloud Run lo reserva y asigna automáticamente)
         if [ "$KEY" != "PORT" ] && [ -n "$KEY" ]; then
             ENV_VARS_LIST+=("${KEY}=${VAL}")
         fi
     done < "$ENV_FILE"
 fi
 
-# Agregar defaults para Cloud Run
-ENV_VARS_LIST+=("PORT=8080")
-ENV_VARS_LIST+=("CORS_ORIGINS=*")
+# Agregar CORS_ORIGINS si no estaba en .env
+if ! grep -q "^CORS_ORIGINS=" "$ENV_FILE" 2>/dev/null; then
+    ENV_VARS_LIST+=("CORS_ORIGINS=*")
+fi
 
-# Construir cadena de variables de entorno para gcloud
-ENV_STRING=$(IFS=, ; echo "${ENV_VARS_LIST[*]}")
+# Generar archivo YAML temporal seguro para variables de entorno
+ENV_YAML="${BACKEND_DIR}/.env.cloudrun.yaml"
+> "${ENV_YAML}"
+for item in "${ENV_VARS_LIST[@]}"; do
+    K=$(echo "$item" | cut -d '=' -f 1)
+    V=$(echo "$item" | cut -d '=' -f 2-)
+    # Escapar comillas dobles en el valor
+    V_ESCAPED=$(echo "$V" | sed 's/"/\\"/g')
+    echo "${K}: \"${V_ESCAPED}\"" >> "${ENV_YAML}"
+done
 
 # 6. Desplegar en Google Cloud Run usando Cloud Build
 echo -e "\n${YELLOW}🚀 Compilando contenedor y desplegando en Cloud Run...${NC}"
@@ -98,11 +107,15 @@ gcloud run deploy "${SERVICE_NAME}" \
     --allow-unauthenticated \
     --min-instances 0 \
     --max-instances 3 \
-    --memory 512Mi \
+    --memory 1Gi \
     --cpu 1 \
     --timeout 300 \
-    --set-env-vars "${ENV_STRING}" \
-    --project "${PROJECT_ID}"
+    --env-vars-file "${ENV_YAML}" \
+    --project "${PROJECT_ID}" \
+    --quiet
+
+# Limpiar archivo temporal de variables de entorno
+rm -f "${ENV_YAML}"
 
 # 7. Obtener URL del servicio y verificar salud
 SERVICE_URL=$(gcloud run services describe "${SERVICE_NAME}" --platform managed --region "${REGION}" --format="value(status.url)" --project "${PROJECT_ID}")
