@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.agent import run_agent_query
+from app.database import save_chat_log, get_recent_chat_logs, get_session_history, get_recent_audits
+from app.crewai_monitor import run_async_audit
 
 app = FastAPI(
     title="UBA FAQ & Links AI Agent API",
@@ -23,8 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-from app.database import save_chat_log, get_recent_chat_logs, get_session_history
 
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Rol del emisor: 'user' o 'assistant'")
@@ -57,18 +57,24 @@ def get_history_by_session(session_id: str):
     """Devuelve el historial previo de mensajes para retomar la conversación."""
     return {"history": get_session_history(session_id)}
 
+@app.get("/api/audits")
+def get_audits(limit: int = 20):
+    """Devuelve las evaluaciones y auditorías de calidad realizadas por el supervisor de CrewAI."""
+    return {"audits": get_recent_audits(limit=limit)}
+
 @app.post("/api/chat", response_model=ChatResponse)
-def chat_endpoint(request: ChatRequest):
+def chat_endpoint(request: ChatRequest, background_tasks: BackgroundTasks):
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=400, detail="El mensaje no puede estar vacío.")
 
     try:
         history_dicts = [msg.model_dump() for msg in request.history] if request.history else []
-        reply = run_agent_query(
+        reply, trace_id = run_agent_query(
             user_input=request.message,
             history=history_dicts,
             session_id=request.session_id,
-            system_prompt=request.system_prompt
+            system_prompt=request.system_prompt,
+            return_trace_id=True
         )
 
         # Guardar interacción en la tabla chat_logs de Supabase
@@ -76,6 +82,15 @@ def chat_endpoint(request: ChatRequest):
             user_message=request.message,
             bot_response=reply,
             session_id=request.session_id
+        )
+
+        # Ejecutar auditoría del supervisor de CrewAI en segundo plano (latencia cero para el alumno)
+        background_tasks.add_task(
+            run_async_audit,
+            session_id=request.session_id,
+            user_message=request.message,
+            bot_response=reply,
+            trace_id=trace_id
         )
 
         return ChatResponse(response=reply)

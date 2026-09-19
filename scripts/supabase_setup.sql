@@ -83,3 +83,30 @@ create policy "Permitir lectura de logs"
 on chat_logs for select 
 to anon, authenticated, service_role 
 using (true);
+
+-- 6. Crear tabla para almacenar auditorías y evaluaciones del supervisor de CrewAI
+create table if not exists chat_audits (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  session_id text,
+  user_message text not null,
+  bot_response text not null,
+  score float not null,
+  passed boolean not null,
+  hallucination_detected boolean not null,
+  official_links_valid boolean not null,
+  critique text
+);
+
+alter table chat_audits enable row level security;
+
+create policy "Permitir insercion de auditorias" 
+on chat_audits for insert 
+to anon, authenticated, service_role 
+with check (true);
+
+create policy "Permitir lectura de auditorias" 
+on chat_audits for select 
+to anon, authenticated, service_role 
+using (true);
+

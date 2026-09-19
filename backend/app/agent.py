@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any, Optional, TypedDict, Annotated, Sequence
+from typing import List, Dict, Any, Optional, TypedDict, Annotated, Sequence, Tuple, Union
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import create_retriever_tool
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
@@ -81,23 +81,10 @@ def get_agent_graph(system_prompt: Optional[str] = None):
     if not system_prompt:
         system_prompt = load_default_system_prompt()
 
-    vector_store = get_vector_store()
-    retriever = vector_store.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 4}
-    )
+    from app.llamaindex_rag import get_llamaindex_tool
 
-    # Tool nativa de búsqueda en la base de conocimiento UBA
-    uba_retriever_tool = create_retriever_tool(
-        retriever=retriever,
-        name="search_uba_knowledge",
-        description=(
-            "Útil para buscar información oficial sobre la Universidad de Buenos Aires (UBA), "
-            "incluyendo CBC, UBA XXI, fechas de inscripción, facultades, trámites de legalización de títulos, "
-            "acceso al SIU Guaraní y becas. Devuelve fragmentos con sus enlaces oficiales."
-        )
-    )
-
+    # Herramienta de RAG impulsada por LlamaIndex
+    uba_retriever_tool = get_llamaindex_tool()
     tools = [uba_retriever_tool]
     # Parámetros por defecto para el LLM principal
     llm_model = "gpt-4o-mini"
@@ -192,8 +179,9 @@ def run_agent_query(
     user_input: str,
     history: Optional[List[Dict[str, str]]] = None,
     session_id: Optional[str] = None,
-    system_prompt: Optional[str] = None
-) -> str:
+    system_prompt: Optional[str] = None,
+    return_trace_id: bool = False
+) -> Union[str, Tuple[str, Optional[str]]]:
     """Ejecuta una consulta contra el grafo, integrando Langfuse si está configurado."""
     graph = get_agent_graph(system_prompt=system_prompt)
     
@@ -212,6 +200,8 @@ def run_agent_query(
 
     # Configuración de Observabilidad con Langfuse
     config: Dict[str, Any] = {}
+    langfuse_handler = None
+    trace_id = None
     if HAS_LANGFUSE and os.getenv("LANGFUSE_SECRET_KEY") and os.getenv("LANGFUSE_PUBLIC_KEY"):
         # Inicializamos el Callback de Langfuse
         langfuse_handler = CallbackHandler()
@@ -227,6 +217,9 @@ def run_agent_query(
     # Invocamos el grafo
     result = graph.invoke({"messages": formatted_history}, config=config)
 
+    if langfuse_handler:
+        trace_id = getattr(langfuse_handler, "last_trace_id", None)
+
     # Vaciamos la cola para asegurar el envío inmediato a Langfuse Cloud
     if HAS_LANGFUSE:
         try:
@@ -237,4 +230,6 @@ def run_agent_query(
 
     # Obtenemos la última respuesta del asistente
     final_message = result["messages"][-1]
+    if return_trace_id:
+        return final_message.content, trace_id
     return final_message.content
