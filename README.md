@@ -10,7 +10,7 @@ Sistema completo de inteligencia artificial en **Python (FastAPI + LangChain)** 
 - **Base de Datos & Vectors:** Supabase PostgreSQL con extensión `pgvector`.
 - **Modelos IA:** OpenAI `gpt-4o-mini` (LLM) y `text-embedding-3-small` (Embeddings).
 - **Carpeta de Conocimiento:** `backend/data/knowledge_base/` (contiene los archivos de FAQs y URLs).
-- **Contenedor:** Dockerfile multietapa optimizado para despliegue automático en **Render**.
+- **Contenedor:** Dockerfile optimizado para despliegue serverless en **Google Cloud Run**.
 - **Frontend:** SPA liviana en HTML5, CSS3 y JS Vanilla listos para subir a **Vercel**, **Netlify** o **GitHub Pages**.
 
 ---
