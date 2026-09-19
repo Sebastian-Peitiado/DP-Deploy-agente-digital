@@ -75,24 +75,42 @@ docker compose up --build
 
 ## ☁️ Despliegue en la Nube
 
-### 1. Despliegue del Backend en **Render** (render.com)
-1. Sube este repositorio a **GitHub**.
-2. Ingresa a [Render Dashboard](https://dashboard.render.com/) y crea un nuevo **Web Service**.
-3. Conecta tu repositorio de GitHub.
-4. Render detectará automáticamente el archivo `backend/Dockerfile`.
-5. Define la carpeta del código fuente (*Root Directory*) en `backend`.
-6. En la sección **Environment Variables**, añade:
-   - `OPENAI_API_KEY`
-   - `SUPABASE_URL`
-   - `SUPABASE_KEY`
-   - `CORS_ORIGINS` (URL donde alojes tu Frontend)
-7. Haz clic en **Create Web Service**. ¡Render compilará el contenedor Docker y te dará una URL pública HTTPS!
+### 1. Despliegue del Backend en **Google Cloud Run**
+El backend está preparado para desplegarse de manera serverless en Google Cloud Run utilizando contenedores:
+
+#### Opción A: Despliegue Automatizado con Script
+Ejecuta el script incluido que verifica credenciales, habilita APIs y despliega automáticamente:
+```bash
+./scripts/deploy_cloud_run.sh
+```
+
+#### Opción B: Despliegue Manual con gcloud CLI
+1. Autentícate y selecciona tu proyecto en Google Cloud:
+   ```bash
+   gcloud auth login
+   gcloud config set project TU_PROJECT_ID
+   ```
+2. Habilita los servicios necesarios:
+   ```bash
+   gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+   ```
+3. Despliega el backend en Cloud Run:
+   ```bash
+   gcloud run deploy uba-orienta-backend \
+       --source ./backend \
+       --platform managed \
+       --region us-central1 \
+       --allow-unauthenticated \
+       --min-instances 0 \
+       --max-instances 3 \
+       --memory 512Mi \
+       --set-env-vars "PORT=8080,CORS_ORIGINS=*"
+   ```
 
 ### 2. Despliegue del Frontend
-Sube el contenido de la carpeta `frontend/` a cualquier servicio de hosting estático:
-- **Vercel:** Importa la carpeta `frontend/` o tu repo.
-- **Netlify:** Arrastra la carpeta `frontend/` o vincula tu repo.
-- **GitHub Pages:** Habilita GitHub Pages apuntando a la carpeta `frontend/`.
+El frontend estático (ubicado en `backend/frontend/`) se sirve automáticamente desde la raíz del backend en Cloud Run (`/`), o bien puede desplegarse independientemente en:
+- **Firebase Hosting** (Google Cloud)
+- **Vercel** / **Netlify** / **GitHub Pages**
 
 ---
 

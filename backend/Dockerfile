@@ -19,8 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código fuente de la aplicación
 COPY . .
 
-# Exponer el puerto configurado (Render asignará PORT automáticamente)
-EXPOSE 8000
+# Exponer el puerto configurado (Cloud Run asigna PORT=8080 por defecto)
+EXPOSE 8080
 
 # Comando para ejecutar FastAPI con Uvicorn
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --proxy-headers"]
