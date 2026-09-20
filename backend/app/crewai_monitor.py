@@ -23,6 +23,42 @@ class AuditEvaluation(BaseModel):
     official_links_valid: bool = Field(default=True, description="True si los links provistos son dominios oficiales (.uba.ar)")
     critique: str = Field(default="Respuesta adecuada y verídica.", description="Justificación de la evaluación realizada por el auditor")
 
+def get_supervisor_prompt(user_message: str, bot_response: str) -> str:
+    """Obtiene y compila el prompt del supervisor desde Langfuse Prompt Management con fallback a markdown local."""
+    if HAS_LANGFUSE and os.getenv("LANGFUSE_SECRET_KEY") and os.getenv("LANGFUSE_PUBLIC_KEY"):
+        try:
+            client = get_client()
+            prompt_obj = client.get_prompt("supervisor_prompt", label="production")
+            return prompt_obj.compile(user_message=user_message, bot_response=bot_response)
+        except Exception as e:
+            print(f"⚠️ No se pudo compilar supervisor_prompt desde Langfuse, usando local: {e}")
+
+    # Fallback local a app/prompts/supervisor_prompt.md
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    prompt_path = os.path.join(base_dir, "prompts", "supervisor_prompt.md")
+    
+    if os.path.exists(prompt_path):
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            template = f.read()
+    else:
+        template = (
+            "Analiza con rigurosidad la siguiente interacción entre un aspirante y el asistente de la UBA:\n\n"
+            "--- Pregunta del usuario ---\n{{user_message}}\n\n"
+            "--- Respuesta emitida por el agente ---\n{{bot_response}}\n\n"
+            "Criterios de verificación obligatorios:\n"
+            "1. Veracidad: ¿La respuesta contesta lo consultado basándose en políticas de la UBA?\n"
+            "2. Enlaces: ¿Los enlaces suministrados apuntan a dominios oficiales (*.uba.ar)?\n"
+            "3. Alucinación: ¿Hay indicios de datos inventados, fechas contradictorias o carreras inexistentes?\n"
+            "Asigna un puntaje (score) entre 0.0 y 1.0 y una crítica concisa."
+        )
+
+    return (
+        template.replace("{{user_message}}", user_message)
+                .replace("{{bot_response}}", bot_response)
+                .replace("{user_message}", user_message)
+                .replace("{bot_response}", bot_response)
+    )
+
 def run_audit_sync(user_message: str, bot_response: str) -> Dict[str, Any]:
     """Ejecuta la evaluación síncrona con el agente supervisor de CrewAI."""
     api_key = settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY")
@@ -44,18 +80,12 @@ def run_audit_sync(user_message: str, bot_response: str) -> Dict[str, Any]:
         verbose=False
     )
 
+    # Obtención dinámica del prompt compilado (Langfuse o fallback local)
+    task_description = get_supervisor_prompt(user_message=user_message, bot_response=bot_response)
+
     # Definición de la Tarea de Auditoría
     audit_task = Task(
-        description=(
-            f"Analiza con rigurosidad la siguiente interacción entre un aspirante y el asistente de la UBA:\n\n"
-            f"--- Pregunta del usuario ---\n{user_message}\n\n"
-            f"--- Respuesta emitida por el agente ---\n{bot_response}\n\n"
-            "Criterios de verificación obligatorios:\n"
-            "1. Veracidad: ¿La respuesta contesta lo consultado basándose en políticas de la UBA?\n"
-            "2. Enlaces: ¿Los enlaces suministrados apuntan a dominios oficiales (*.uba.ar)?\n"
-            "3. Alucinación: ¿Hay indicios de datos inventados, fechas contradictorias o carreras inexistentes?\n"
-            "Asigna un puntaje (score) entre 0.0 y 1.0 y una crítica concisa."
-        ),
+        description=task_description,
         expected_output="Objeto JSON estructurado según el esquema AuditEvaluation con score, passed, hallucination_detected, official_links_valid y critique.",
         agent=supervisor_agent,
         output_pydantic=AuditEvaluation
